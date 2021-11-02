@@ -1,15 +1,24 @@
-FROM golang:latest
+# [編集] ベースイメージをbuilderイメージとして指定
+FROM golang:1.16 as builder
 
-# ワークディレクトリ作成
+# ワークディレクトリを指定
 WORKDIR /app
 
-# ホストOSの/apps内全てをWORKDIRにコピー
+# ホストOSのapps内全てをWORKDIRにコピー
 COPY . ./
 
 # ビルド
 RUN go build -o ./server-run ./server
 
-# コンテナの9090ポートを公開
+# [追加] 軽量なdistrolessイメージを指定
+FROM gcr.io/distroless/base
+
+# コンテナのポートを9090で公開
 EXPOSE 9090
 
+# [追加] golang:1.16でビルドしたアプリケーションをコピー
+COPY --from=builder app/server-run /.
+COPY web /web
+
+# アプリ実行
 CMD [ "./server-run" ]
